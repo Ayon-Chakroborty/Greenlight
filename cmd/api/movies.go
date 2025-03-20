@@ -59,5 +59,19 @@ func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	fmt.Fprintf(w, "%+v\n", input)
+	err = app.models.Movies.Insert(movie)
+	if err != nil{
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	// set location to update uri for the user to see it
+	headers := make(http.Header)
+	headers.Set("Location", fmt.Sprintf("/v1/movies/%d", movie.ID))
+
+	// write json response with 201 status code
+	err = app.writeJSON(w, http.StatusCreated, envelope{"movie": movie}, headers)
+	if err != nil{
+		app.serverErrorResponse(w, r, err)
+	}
 }

@@ -1,8 +1,10 @@
 package data
 
 import (
+	"database/sql"
 	"time"
 
+	"github.com/lib/pq"
 	"greenlight.ayonchakroborty.net/internal/data/validator"
 )
 
@@ -16,7 +18,7 @@ type Movie struct {
 	Version   int32     `json:"version"`
 }
 
-func ValidateMovie(v *validator.Validator, movie *Movie){
+func ValidateMovie(v *validator.Validator, movie *Movie) {
 	v.Check(movie.Title != "", "title", "must be provided")
 	v.Check(len(movie.Title) <= 500, "title", "must not be more than 500 bytes long")
 
@@ -34,3 +36,34 @@ func ValidateMovie(v *validator.Validator, movie *Movie){
 	v.Check(validator.Unique(movie.Genres), "genres", "must not contain duplicate genres")
 }
 
+// Database model that wraps the sql.DB connection pool
+type MovieModel struct {
+	DB *sql.DB
+}
+
+// add a new record
+func (m MovieModel) Insert(movie *Movie) error {
+	query := `
+			INSERT INTO movies (title, year, runtime, genres)
+			VALUES ($1, $2, $3, $4)
+			RETURNING id, created_at, version`
+
+	args := []any{movie.Title, movie.Year, movie.Runtime, pq.Array(movie.Genres)}
+
+	return m.DB.QueryRow(query, args...).Scan(&movie.ID, &movie.CreatedAt, &movie.Version)
+}
+
+// get a record
+func (m MovieModel) Get(id int64) (*Movie, error) {
+	return nil, nil
+}
+
+// update a record
+func (m MovieModel) Update(movie *Movie) error {
+	return nil
+}
+
+// delete a record
+func (m MovieModel) Delete(id int64) error {
+	return nil
+}
