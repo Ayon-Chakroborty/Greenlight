@@ -17,8 +17,8 @@ func (app *application) showMovieHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	movie, err := app.models.Movies.Get(id)
-	if err != nil{
-		switch{
+	if err != nil {
+		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
 			app.notFoundResponse(w, r)
 		default:
@@ -62,7 +62,7 @@ func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	err = app.models.Movies.Insert(movie)
-	if err != nil{
+	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
@@ -73,23 +73,23 @@ func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Reques
 
 	// write json response with 201 status code
 	err = app.writeJSON(w, http.StatusCreated, envelope{"movie": movie}, headers)
-	if err != nil{
+	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
 }
 
-func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Request){
+func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Request) {
 	// Get ID from URL
 	id, err := app.readIDParams(r)
-	if err != nil{
+	if err != nil {
 		app.notFoundResponse(w, r)
 		return
 	}
 
 	// Get the movie record from the database to check if it exists
 	movie, err := app.models.Movies.Get(id)
-	if err != nil{
-		switch{
+	if err != nil {
+		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
 			app.notFoundResponse(w, r)
 		default:
@@ -118,24 +118,51 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 	movie.Year = input.Year
 	movie.Runtime = input.Runtime
 	movie.Genres = input.Genres
-	
+
 	// Validate the movie struct
 	v := validator.New()
 
-	if data.ValidateMovie(v, movie); !v.Valid(){
+	if data.ValidateMovie(v, movie); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 
 	// update the record in the database
 	err = app.models.Movies.Update(movie)
-	if err != nil{
+	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
 	// write updated movie as a JSON response back to the user
-	err = app.writeJSON(w, http.StatusOK, envelope{"movie":movie}, nil)
+	err = app.writeJSON(w, http.StatusOK, envelope{"movie": movie}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}
+
+func (app *application) deleteMovieHandler(w http.ResponseWriter, r *http.Request){
+	// Get ID from params
+	id, err := app.readIDParams(r)
+	if err != nil{
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	// Delete a movie
+	err = app.models.Movies.Delete(id)
+	if err != nil{
+		switch{
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	// Write message reponse to user
+	err = app.writeJSON(w, http.StatusOK, envelope{"message": "movie successfully deleted"}, nil)
 	if err != nil{
 		app.serverErrorResponse(w, r, err)
 	}
