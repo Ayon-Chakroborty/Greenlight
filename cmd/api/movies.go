@@ -100,10 +100,10 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 
 	// input strcut to hold JSON data from client
 	var input struct {
-		Title   string       `json:"title"`
-		Year    int32        `json:"year"`
-		Runtime data.Runtime `json:"runtime"`
-		Genres  []string     `json:"genres"`
+		Title   *string       `json:"title"`
+		Year    *int32        `json:"year"`
+		Runtime *data.Runtime `json:"runtime"`
+		Genres  []string      `json:"genres"`
 	}
 
 	// read JSON and store it in struct
@@ -114,10 +114,18 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	// Copy values from the request to the movie struct
-	movie.Title = input.Title
-	movie.Year = input.Year
-	movie.Runtime = input.Runtime
-	movie.Genres = input.Genres
+	if input.Title != nil {
+		movie.Title = *input.Title
+	}
+	if input.Year != nil {
+		movie.Year = *input.Year
+	}
+	if input.Runtime != nil {
+		movie.Runtime = *input.Runtime
+	}
+	if input.Genres != nil {
+		movie.Genres = input.Genres
+	}
 
 	// Validate the movie struct
 	v := validator.New()
@@ -130,7 +138,12 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 	// update the record in the database
 	err = app.models.Movies.Update(movie)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		switch{
+		case errors.Is(err, data.ErrEditConflict):
+			app.editConflictResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
 		return
 	}
 
@@ -141,18 +154,18 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func (app *application) deleteMovieHandler(w http.ResponseWriter, r *http.Request){
+func (app *application) deleteMovieHandler(w http.ResponseWriter, r *http.Request) {
 	// Get ID from params
 	id, err := app.readIDParams(r)
-	if err != nil{
+	if err != nil {
 		app.notFoundResponse(w, r)
 		return
 	}
 
 	// Delete a movie
 	err = app.models.Movies.Delete(id)
-	if err != nil{
-		switch{
+	if err != nil {
+		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
 			app.notFoundResponse(w, r)
 		default:
@@ -163,7 +176,7 @@ func (app *application) deleteMovieHandler(w http.ResponseWriter, r *http.Reques
 
 	// Write message reponse to user
 	err = app.writeJSON(w, http.StatusOK, envelope{"message": "movie successfully deleted"}, nil)
-	if err != nil{
+	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
 }

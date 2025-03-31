@@ -8,16 +8,17 @@ import (
 // custom error message
 var (
 	ErrRecordNotFound = errors.New("record not found")
+	ErrEditConflict   = errors.New("edit conflict")
 )
 
 // Parent model to hold all models
-type Models struct{
+type Models struct {
 	Movies MovieModel
 }
 
 // method that returns a new Models struct
 func NewModels(db *sql.DB) Models {
 	return Models{
-		Movies : MovieModel{DB: db},
+		Movies: MovieModel{DB: db},
 	}
 }
