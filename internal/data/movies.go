@@ -97,11 +97,12 @@ func (m MovieModel) Get(id int64) (*Movie, error) {
 
 func (m MovieModel) GetAll(title string, genres []string, filters Filters) ([]*Movie, error){
 	// will set title equal input (case-incensitve with LOWER()) or skips title if input is empty
+	// supports partial and full text search on title
 	// will set genres equal to inputs or skips genres if input is empty
 	query := `
 		SELECT id, created_at, title, year, runtime, genres, version
 		FROM movies
-		WHERE (LOWER(title) = LOWER($1) OR $1 = '') 
+		WHERE (to_tsvector('simple', title) @@ plainto_tsquery('simple', $1) OR $1 = '') 
 		AND (genres @> $2 OR $2 = '{}')
 		ORDER BY id`
 		
