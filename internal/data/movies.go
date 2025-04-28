@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/lib/pq"
@@ -95,26 +96,33 @@ func (m MovieModel) Get(id int64) (*Movie, error) {
 	return &movie, nil
 }
 
-func (m MovieModel) GetAll(title string, genres []string, filters Filters) ([]*Movie, error){
+func (m MovieModel) GetAll(title string, genres []string, filters Filters) ([]*Movie, Metadata, error) {
 	// will set title equal input (case-incensitve with LOWER()) or skips title if input is empty
 	// supports partial and full text search on title
 	// will set genres equal to inputs or skips genres if input is empty
-	query := `
-		SELECT id, created_at, title, year, runtime, genres, version
+	// will give order of records based on user input or default value (ORDER BY)
+	// will set page size (LIMIT number of items returned) and which page to return(OFFSET)
+	query := fmt.Sprintf(`
+		SELECT count(*) OVER(), id, created_at, title, year, runtime, genres, version
 		FROM movies
 		WHERE (to_tsvector('simple', title) @@ plainto_tsquery('simple', $1) OR $1 = '') 
 		AND (genres @> $2 OR $2 = '{}')
-		ORDER BY id`
-		
+		ORDER BY %s %s, id ASC
+		LIMIT $3 OFFSET $4`, filters.sortColumn(), filters.sortDirection())
+
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	rows, err := m.DB.QueryContext(ctx, query, title, pq.Array(genres))
-	if err != nil{
-		return nil, err
+	args := []any{title, pq.Array(genres), filters.limit(), filters.offset()}
+
+	rows, err := m.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, Metadata{}, err
 	}
 
 	defer rows.Close()
+
+	totalRecords := 0
 
 	movies := []*Movie{}
 
@@ -122,26 +130,29 @@ func (m MovieModel) GetAll(title string, genres []string, filters Filters) ([]*M
 		var movie Movie
 
 		err := rows.Scan(
+			&totalRecords,
 			&movie.ID,
 			&movie.CreatedAt,
-			&movie.Title, 
+			&movie.Title,
 			&movie.Year,
 			&movie.Runtime,
 			pq.Array(&movie.Genres),
 			&movie.Version,
 		)
-		if err != nil{
-			return nil, err
+		if err != nil {
+			return nil, Metadata{}, err
 		}
 
 		movies = append(movies, &movie)
 	}
 
-	if err = rows.Err(); err != nil{
-		return nil, err
+	if err = rows.Err(); err != nil {
+		return nil, Metadata{}, err
 	}
 
-	return movies, nil
+	metadata := calculateMetadata(totalRecords, filters.Page, filters.PageSize)
+
+	return movies, metadata, nil
 }
 
 // update a record
