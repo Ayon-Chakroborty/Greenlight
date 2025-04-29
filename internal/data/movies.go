@@ -98,7 +98,7 @@ func (m MovieModel) Get(id int64) (*Movie, error) {
 
 func (m MovieModel) GetAll(title string, genres []string, filters Filters) ([]*Movie, Metadata, error) {
 	// will set title equal input (case-incensitve with LOWER()) or skips title if input is empty
-	// supports partial and full text search on title
+	// supports partial and full text search on title look at up and down files
 	// will set genres equal to inputs or skips genres if input is empty
 	// will give order of records based on user input or default value (ORDER BY)
 	// will set page size (LIMIT number of items returned) and which page to return(OFFSET)
