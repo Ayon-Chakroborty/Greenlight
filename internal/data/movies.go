@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/lib/pq"
-	"greenlight.ayonchakroborty.net/internal/data/validator"
+	"greenlight.ayonchakroborty.net/internal/validator"
 )
 
 type Movie struct {

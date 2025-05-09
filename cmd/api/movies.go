@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"greenlight.ayonchakroborty.net/internal/data"
-	"greenlight.ayonchakroborty.net/internal/data/validator"
+	"greenlight.ayonchakroborty.net/internal/validator"
 )
 
 func (app *application) showMovieHandler(w http.ResponseWriter, r *http.Request) {
