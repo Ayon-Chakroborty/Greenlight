@@ -22,8 +22,8 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	user := &data.User{
-		Name: input.Name,
-		Email: input.Email,
+		Name:      input.Name,
+		Email:     input.Email,
 		Activated: false,
 	}
 
@@ -35,14 +35,14 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 
 	v := validator.New()
 
-	if data.ValidateUser(v, user); !v.Valid(){
+	if data.ValidateUser(v, user); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 
 	err = app.models.Users.Insert(user)
-	if err != nil{
-		switch{
+	if err != nil {
+		switch {
 		case errors.Is(err, data.ErrDuplicateEmail):
 			v.AddError("email", "a user with this email address already exists")
 			app.failedValidationResponse(w, r, v.Errors)
@@ -53,14 +53,16 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	// Send confirmation email
-	err = app.mailer.Send(user.Email, "user_welcome.tmpl", user)
-	if err != nil{
-		app.serverErrorResponse(w, r, err)
-		return
-	}
+	app.background(func() {
+		err := app.mailer.Send(user.Email, "user_welcome.tmpl", user)
+		if err != nil {
+			app.logger.Error(err.Error())
+			return
+		}
+	})
 
-	err = app.writeJSON(w, http.StatusCreated, envelope{"user":user}, nil)
-	if err != nil{
+	err = app.writeJSON(w, http.StatusAccepted, envelope{"user": user}, nil)
+	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
 }

@@ -138,3 +138,21 @@ func (app *application) readInt(qs url.Values, key string, defaultValue int, v *
 
 	return i
 }
+
+func (app *application) background(fn func()){
+	// Increment waitgroup before calling goroutine
+	app.wg.Add(1)
+
+	go func ()  {
+		// call done to decrement waitgroup goroutine before it returns
+		defer app.wg.Done()
+
+		defer func() {
+			if err := recover(); err != nil {
+				app.logger.Error(fmt.Sprintf("%v", err))
+			}
+		}()
+
+		fn()
+	}()
+}
