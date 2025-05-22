@@ -58,9 +58,9 @@ type TokenModel struct {
 }
 
 // Method to generate new token and insert into database
-func (m TokenModel) New(userID int64, ttl time.Duration, scope string) (*Token, error){
+func (m TokenModel) New(userID int64, ttl time.Duration, scope string) (*Token, error) {
 	token, err := generateToken(userID, ttl, scope)
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
 
@@ -68,7 +68,7 @@ func (m TokenModel) New(userID int64, ttl time.Duration, scope string) (*Token, 
 	return token, err
 }
 
-func (m TokenModel) Insert(token *Token) error{
+func (m TokenModel) Insert(token *Token) error {
 	query := `
 		INSERT INTO tokens (hash, user_id, expiry, scope)
 		VALUES ($1, $2, $3, $4)`
@@ -83,14 +83,18 @@ func (m TokenModel) Insert(token *Token) error{
 }
 
 // deletes all tokens for a specific user and scope
-func (m TokenModel) DeleteAllForUser(scope string, userID int64) error{
+func (m TokenModel) DeleteAllForUser(scope string, userID int64) error {
 	query := `
 		DELETE FROM tokens
 		WHERE scope = $1 and user_id = $2`
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
 	_, err := m.DB.ExecContext(ctx, query, scope, userID)
 	return err
 }
+
+// func (m TokenModel) GetAllForUser(id int) ([]*Token, error){
+// 	query := `SELECT`
+// }
