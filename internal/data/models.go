@@ -13,16 +13,18 @@ var (
 
 // Parent model to hold all models
 type Models struct {
-	Movies MovieModel
-	Tokens TokenModel
-	Users  UserModel
+	Movies      MovieModel
+	Tokens      TokenModel
+	Users       UserModel
+	Permissions PermissionModel
 }
 
 // method that returns a new Models struct
 func NewModels(db *sql.DB) Models {
 	return Models{
-		Movies: MovieModel{DB: db},
-		Tokens: TokenModel{DB: db},
-		Users:  UserModel{DB: db},
+		Movies:      MovieModel{DB: db},
+		Tokens:      TokenModel{DB: db},
+		Users:       UserModel{DB: db},
+		Permissions: PermissionModel{DB: db},
 	}
 }
