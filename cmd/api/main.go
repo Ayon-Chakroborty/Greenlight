@@ -3,9 +3,11 @@ package main
 import (
 	"context"
 	"database/sql"
+	"expvar"
 	"flag"
 	"log/slog"
 	"os"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -39,7 +41,7 @@ type config struct {
 		password string
 		sender   string
 	}
-	cors struct{
+	cors struct {
 		trustedOrigins []string
 	}
 }
@@ -78,7 +80,7 @@ func main() {
 	flag.StringVar(&cfg.smtp.password, "smtp-password", "b7c16e07f7ba54", "SMTP password")
 	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "Greenlight <no-reply@greenlight.ayonchakroborty.net>", "SMTP sender")
 
-	flag.Func("cors-trusted-origins", "Trusted CORS origins (space separated)", func(val string) error{
+	flag.Func("cors-trusted-origins", "Trusted CORS origins (space separated)", func(val string) error {
 		cfg.cors.trustedOrigins = strings.Fields(val)
 		return nil
 	})
@@ -95,6 +97,20 @@ func main() {
 	defer db.Close() // close connection pool before main func exits
 
 	logger.Info("database connection pool established")
+
+	expvar.NewString("version").Set(version)
+
+	expvar.Publish("goroutines", expvar.Func(func() any {
+		return runtime.NumGoroutine()
+	}))
+
+	expvar.Publish("database", expvar.Func(func() any {
+		return db.Stats()
+	}))
+
+	expvar.Publish("timestamp", expvar.Func(func() any {
+		return time.Now().Unix()
+	}))
 
 	app := &application{
 		config: cfg,
