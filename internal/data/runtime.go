@@ -27,13 +27,13 @@ func (r *Runtime) UnmarshalJSON(jsonValue []byte) error {
 
 	// check if string is only 2 parts "<runtime> mins"
 	parts := strings.Split(unquotedJSONValue, " ")
-	if len(parts) != 2 || parts[1] != "mins"{
+	if len(parts) != 2 || parts[1] != "mins" {
 		return ErrInvalidRtuntimeFormat
 	}
 
 	// take the runtime value and convert it to int
 	val, err := strconv.ParseInt(parts[0], 10, 32)
-	if err != nil{
+	if err != nil {
 		return ErrInvalidRtuntimeFormat
 	}
 

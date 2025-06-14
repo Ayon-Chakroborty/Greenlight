@@ -54,7 +54,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	err = app.models.Permissions.AddForUser(user.ID, "movies:read")
-	if err != nil{
+	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}

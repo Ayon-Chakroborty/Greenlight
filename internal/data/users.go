@@ -31,6 +31,7 @@ type User struct {
 func (u *User) IsAnonymous() bool {
 	return u == AnonymousUser
 }
+
 type password struct {
 	plaintext *string // plaintexted password
 	hash      []byte  // hashed password
@@ -213,8 +214,8 @@ func (m *UserModel) GetForToken(scope, tokenPlaintext string) (*User, error) {
 		&user.Version,
 	)
 
-	if err != nil{
-		switch{
+	if err != nil {
+		switch {
 		case errors.Is(err, sql.ErrNoRows):
 			return nil, ErrRecordNotFound
 		default:

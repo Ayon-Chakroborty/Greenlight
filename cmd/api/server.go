@@ -27,7 +27,7 @@ func (app *application) serve() error {
 
 	// USE CTRL \ to skip gracefull shutdown
 	// go routine with gracefull shutdown of server
-	go func ()  {
+	go func() {
 		quit := make(chan os.Signal, 1)
 
 		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
@@ -40,25 +40,24 @@ func (app *application) serve() error {
 		defer cancel()
 
 		err := srv.Shutdown(ctx)
-		if err != nil{
-			shutdownError <- srv.Shutdown(ctx) 
+		if err != nil {
+			shutdownError <- srv.Shutdown(ctx)
 		}
 
 		app.logger.Info("completing background tasks", "addr", srv.Addr)
 		app.wg.Wait()
 		shutdownError <- nil
 	}()
-	
 
 	app.logger.Info("starting server", "addr", srv.Addr, "env", app.config.env)
 
-	err := srv.ListenAndServe() // start server and wait for shutdown
-	if !errors.Is(err, http.ErrServerClosed){ // if graceful shutdown occured successfully then it will return ErrServerClosed.
-		return err							  // So we check for other errors because that means something went wrong
+	err := srv.ListenAndServe()                // start server and wait for shutdown
+	if !errors.Is(err, http.ErrServerClosed) { // if graceful shutdown occured successfully then it will return ErrServerClosed.
+		return err // So we check for other errors because that means something went wrong
 	}
 
 	err = <-shutdownError // check for errors again
-	if err != nil{
+	if err != nil {
 		return err
 	}
 
